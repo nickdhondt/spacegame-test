@@ -1,2 +1,2 @@
 # spacegame-test
-Trying out thee.js
+Trying out three.js
