@@ -1,0 +1,388 @@
+<!DOCTYPE html>
+<html>
+<head lang="nl">
+    <meta charset="UTF-8">
+    <title>ge</title>
+    <style>
+        html, body {
+            padding: 0;
+            margin: 0;
+            overflow: hidden;
+        }
+
+        #consoleAlt {
+            background: rgba(255, 255, 255, .6);
+            display: inline-block;
+            position: fixed;
+            width: 15%;
+        }
+
+        #info {
+            position: fixed;
+            right: 0;
+            background: rgba(255, 255, 255, .6);
+            display: inline-block;
+            width: 15%;
+        }
+
+        #toggle {
+            cursor: pointer;
+            color: blue;
+            text-decoration: underline;
+        }
+    </style>
+</head>
+<body>
+<script src="js/three.min.js"></script>
+<div id="consoleAlt"></div>
+<div id="info">
+    <div id="toggle" onclick="toggleInfo()">Toggle info</div>
+    <div id="panel">
+        <h2>First person mode</h2>
+        Bewegen: zqsd-toetsen <br/>
+        <h2>Pilot mode</h2>
+        Roteren: azeqsd-toetsen <br/>
+        Accelereren: x-toets <br/>
+        Decelereren: w-toets
+        <h2>Andere</h2>
+        Mode switchen: p-toets <br/>
+        Time warp: rf-toetsen
+    </div>
+</div>
+<script>
+    var toggleInfoFlag = true;
+    var infoPanel = document.getElementById("panel");
+
+    function toggleInfo() {
+        if (toggleInfoFlag) {
+            toggleInfoFlag = false;
+            infoPanel.style.display = "none";
+        } else {
+            toggleInfoFlag = true;
+            infoPanel.style.display = "block";
+        }
+    }
+
+    alert("Start");
+    var consoleAlt = document.getElementById("consoleAlt");
+    var counter = 0;
+    var speedMultiply = 1;
+    var pilotMode = false;
+    var shipRotationX = 0, shipRotationY = 0, shipRotationZ = 0;
+    var scene = new THREE.Scene();
+
+    var renderer = new THREE.WebGLRenderer( { antialias:true } );
+    renderer.setSize( window.innerWidth, window.innerHeight );
+    document.body.appendChild( renderer.domElement );
+
+    var material = new THREE.MeshLambertMaterial();
+    var materialPlanet = new THREE.MeshLambertMaterial( { color: 0xcd93ae } );
+    var materialMoon = new THREE.MeshLambertMaterial( { color: 0x38b7cd } );
+    var materialMoon2 = new THREE.MeshLambertMaterial( { color: 0xe9cd3f } );
+    var materialSun = new THREE.MeshBasicMaterial( { color: 0xffff00 } );
+
+
+
+
+
+    var light = new THREE.PointLight( 0xcccccc );
+    light.position.set( 90000000, 0, 0 );
+    scene.add( light );
+
+    var sunControl = new THREE.Object3D();
+    var geometrySun = new THREE.SphereGeometry( 3000000, 128, 64 );
+    var sun = new THREE.Mesh( geometrySun, materialSun );
+    sun.position.x = 90000000;
+    scene.add( sunControl );
+    sunControl.add( sun );
+
+    var lightAmbient = new THREE.AmbientLight( 0x151515 );
+    scene.add( lightAmbient );
+
+
+
+
+    var planetControl = new THREE.Object3D();
+    var geometryPlanet = new THREE.SphereGeometry( 300000, 128, 64 );
+    var planet = new THREE.Mesh( geometryPlanet, materialPlanet );
+    scene.add( planetControl );
+    planetControl.add(planet);
+
+    var moonControl = new THREE.Object3D();
+    var geometryMoon = new THREE.SphereGeometry( 125000, 128, 64 );
+    var moon = new THREE.Mesh( geometryMoon, materialMoon );
+    moonControl.add(moon);
+    planetControl.add(moonControl);
+    var moonPosition = new THREE.Vector3(0, 500000, 2000000);
+    var moonVelocity = new THREE.Vector3(1330, 0, 0);
+
+    var moon2Control = new THREE.Object3D();
+    var geometryMoon2 = new THREE.SphereGeometry( 60000, 128, 64 );
+    var moon2 = new THREE.Mesh( geometryMoon2, materialMoon2 );
+    moon2Control.add(moon2);
+    planetControl.add(moon2Control);
+    var moon2Position = new THREE.Vector3(0, 0, -3000000);
+    var moon2Velocity = new THREE.Vector3(-1085, 0, 0);
+
+
+
+
+
+    var shipControl = new THREE.Object3D();
+    var geometryShip = new THREE.BoxGeometry( 3, .5, 6 );
+    var ship = new THREE.Mesh( geometryShip, material );
+    shipControl.add(ship);
+    planetControl.add(shipControl);
+    var shipPosition = new THREE.Vector3(400000, 0, 0);
+    var shipVelocity = new THREE.Vector3(0, 0, -2974);
+    scene.add( shipControl );
+    shipControl.mass = 10000;
+
+    ship.rotation.y = Math.PI;
+
+
+
+
+
+
+    var camera = new THREE.PerspectiveCamera( 75, window.innerWidth/window.innerHeight, 0.1, 100000000 );
+    parent = new THREE.Object3D();
+    //parent.rotation.x = Math.PI/2;
+    parent.add(camera);
+    ship.add(parent);
+
+    //parent.position.z = 1;
+    parent.position.y = 1.25;
+
+
+
+
+
+    var keyArrowUp = false;
+    var keyArrowDown = false;
+    var keyArrowLeft = false;
+    var keyArrowRight = false;
+    var keyArrowSpinRight = false;
+    var keyArrowSpinLeft = false;
+    var keyThrustDown = false;
+    var keyThrustUp = false;
+
+    window.addEventListener("keydown", function(e){
+        var event = window.event ? window.event : e;
+        //alert(event.keyCode);
+        switch (event.keyCode) {
+            case 90:
+                keyArrowUp = true;
+                break;
+            case 83:
+                keyArrowDown = true;
+                break;
+            case 81:
+                keyArrowLeft = true;
+                break;
+            case 68:
+                keyArrowRight = true;
+                break;
+            case 65:
+                keyArrowSpinLeft = true;
+                break;
+            case 69:
+                keyArrowSpinRight = true;
+                break;
+            case 87:
+                keyThrustDown = true;
+                break;
+            case 88:
+                keyThrustUp = true;
+                break;
+        }
+    });
+
+    window.addEventListener("keyup", function(e){
+        var event = window.event ? window.event : e;
+        switch (event.keyCode) {
+            case 90:
+                keyArrowUp = false;
+                break;
+            case 83:
+                keyArrowDown = false;
+                break;
+            case 81:
+                keyArrowLeft = false;
+                break;
+            case 68:
+                keyArrowRight = false;
+                break;
+            case 65:
+                keyArrowSpinLeft = false;
+                break;
+            case 69:
+                keyArrowSpinRight = false;
+                break;
+            case 87:
+                keyThrustDown = false;
+                break;
+            case 88:
+                keyThrustUp = false;
+                break;
+            case 82:
+                if (speedMultiply < 256) speedMultiply = speedMultiply * 2;
+                break;
+            case 70:
+                if (speedMultiply > 1) speedMultiply = speedMultiply / 2;
+                break;
+            case 80:
+                if (pilotMode == true) pilotMode = false;
+                else pilotMode = true;
+                break;
+        }
+    });
+
+    var newTempX, newTempY;
+    var tempX = 0;
+    var tempY = 0;
+    var cursorMoved = false;
+    var firstFrame = true;
+
+    window.addEventListener("mousemove", function(e){
+        newTempX = e.pageX;
+        newTempY = e.pageY;
+
+        cursorMoved = true;
+    });
+
+    var clock = new THREE.Clock();
+
+    function newPositionBody(positionVectorMoon, velocityVectorMoon, parentMass, delta) {
+        var moonDistance = positionVectorMoon.length();
+
+        var gravityOnMoon = (6.6754e-11 * (parentMass / Math.pow(moonDistance, 2))) * -1;
+
+        var unitVectorMoon = new THREE.Vector3();
+        var positionVectorMoonNew = new THREE.Vector3();
+        var velocityVectorMoonNew = new THREE.Vector3();
+
+        unitVectorMoon.copy(positionVectorMoon);
+        unitVectorMoon.normalize();
+
+        velocityVectorMoonNew.copy(unitVectorMoon);
+        velocityVectorMoonNew.multiplyScalar(gravityOnMoon * delta);
+        velocityVectorMoonNew.add(velocityVectorMoon);
+
+        positionVectorMoonNew.copy(velocityVectorMoonNew);
+        positionVectorMoonNew.multiplyScalar(delta);
+        positionVectorMoonNew.add(positionVectorMoon);
+
+        return [positionVectorMoonNew, velocityVectorMoonNew];
+    }
+
+    function calculateVelocityAdd(bodyMass, newtonsPerSecond, delta) {
+        var newtonsPerDelta, extraVelocity;
+        newtonsPerDelta = newtonsPerSecond * delta;
+
+        extraVelocity = newtonsPerDelta / bodyMass;
+
+        //alert(extraVelocity);
+
+        return extraVelocity;
+    }
+
+    var render = function () {
+        requestAnimationFrame( render );
+        var extraVelocity = 0;
+        counter++;
+        var delta = clock.getDelta();
+
+        delta = delta * speedMultiply;
+
+        var newMoonProperties = newPositionBody(moonPosition, moonVelocity, 5.3e22, delta);
+        moonPosition = newMoonProperties[0];
+        moonVelocity = newMoonProperties[1];
+
+        moonControl.position.x = moonPosition.x;
+        moonControl.position.y = moonPosition.y;
+        moonControl.position.z = moonPosition.z;
+
+        var newMoon2Properties = newPositionBody(moon2Position, moon2Velocity, 5.3e22, delta);
+        moon2Position = newMoon2Properties[0];
+        moon2Velocity = newMoon2Properties[1];
+
+        moon2Control.position.x = moon2Position.x;
+        moon2Control.position.y = moon2Position.y;
+        moon2Control.position.z = moon2Position.z;
+
+        var newShipProperties = newPositionBody(shipPosition, shipVelocity, 5.3e22, delta);
+        shipPosition = newShipProperties[0];
+        shipVelocity = newShipProperties[1];
+
+        shipControl.position.x = shipPosition.x;
+        shipControl.position.y = shipPosition.y;
+        shipControl.position.z = shipPosition.z;
+
+        if (keyArrowUp && !pilotMode) {
+            parent.translateZ(-0.05);
+        } else if (keyArrowDown && !pilotMode) {
+            parent.translateZ(0.05);
+        } else if (keyArrowLeft && !pilotMode) {
+            parent.translateX(-0.05);
+        } else if (keyArrowRight && !pilotMode) {
+            parent.translateX(0.05);
+        } else if (keyArrowUp && pilotMode) {
+            shipRotationX -= 0.0001;
+        } else if (keyArrowDown && pilotMode) {
+            shipRotationX += 0.0001;
+        } else if (keyArrowLeft && pilotMode) {
+            shipRotationY += 0.0001;
+        } else if (keyArrowRight && pilotMode) {
+            shipRotationY -= 0.0001;
+        } else if (keyArrowSpinLeft && pilotMode) {
+            shipRotationZ += 0.0001;
+        } else if (keyArrowSpinRight && pilotMode) {
+            shipRotationZ -= 0.0001;
+        } else if (keyThrustDown && pilotMode) {
+            extraVelocity = (calculateVelocityAdd(shipControl.mass, 2500000, delta) * -1) * speedMultiply;
+        } else if (keyThrustUp && pilotMode) {
+            extraVelocity = calculateVelocityAdd(shipControl.mass, 2500000, delta) * speedMultiply;
+        }
+
+
+        var matrix = new THREE.Matrix4();
+        matrix.extractRotation( ship.matrix );
+
+        var direction = new THREE.Vector3( 0, 0, 1 );
+        direction = matrix.multiplyVector3( direction );
+
+
+
+        direction.multiplyScalar(extraVelocity);
+        //if (extraVelocity != 0) alert(extraVelocity);
+        shipVelocity.add(direction);
+
+        ship.rotation.x += shipRotationX;
+        ship.rotation.y += shipRotationY;
+        ship.rotation.z += shipRotationZ;
+
+        if (cursorMoved == true && firstFrame == false) {
+            parent.rotateY((tempX - newTempX) / 100);
+            camera.rotateX((tempY - newTempY) / 100);
+        }
+
+        if (cursorMoved) {
+            tempX = newTempX;
+            tempY = newTempY;
+
+            firstFrame = false;
+        }
+
+        if (counter == 1 || counter == 22) {
+            counter = 2;
+            consoleAlt.innerHTML = "<h1>Ship stats:</h1><br>x: " + shipPosition.x + "<br>y: " + shipPosition.y + "<br>z: " + shipPosition.z + "<br>Altitude: " + ( shipPosition.length() - 300000 ) + "m<br>Velocity: " + shipVelocity.length() + "m/s<br>Speed: x" + speedMultiply;
+        }
+
+        renderer.render(scene, camera);
+    };
+
+    render();
+</script>
+</body>
+</html>
